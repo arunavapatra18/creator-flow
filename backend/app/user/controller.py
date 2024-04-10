@@ -1,41 +1,60 @@
 from fastapi import HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 
-from user.models import Creator, CreatorCreate, Editor, EditorCreate
-from user.util import generate_password_hash
+import user.auth as auth
+from user.models import Creator, Editor, Token, User, UserCreate, UserResponseModel
+from user.util import generate_password_hash, verify_password
 
 
-def register_creator(user: CreatorCreate, session: Session):
-
+def register_user(user: UserCreate, session: Session):
     # Check if email already exisits
-    email_taken = session.exec(select(Creator).where(Creator.email == user.email))
+    email_taken = session.exec(select(User).where(User.email == user.email))
     if email_taken.first():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT)
 
-    db_creator = Creator.model_validate(user)
-
     # Hash password before storing to database
-    db_creator.password = generate_password_hash(db_creator.password)
+    user.password = generate_password_hash(user.password)
 
-    session.add(db_creator)
+    # Validate User model
+    db_user = User.model_validate(user)
+
+    session.add(db_user)
     session.commit()
-    session.refresh(db_creator)
-    return db_creator
+    session.refresh(db_user)
 
+    if db_user.role == "creator":
+        # Create a corresponding Creator/Editor model
+        db_user_role = Creator(user_id=db_user.id)
+    else:
+        db_user_role = Editor(user_id=db_user.id)
 
-def register_editor(user: EditorCreate, session: Session):
-
-    # Check if email already exisits
-    email_taken = session.exec(select(Editor).where(Editor.email == user.email))
-    if email_taken.first():
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT)
-
-    db_editor = Editor.model_validate(user)
-
-    # Hash password before storing to database
-    db_editor.password = generate_password_hash(db_editor.password)
-
-    session.add(db_editor)
+    session.add(db_user_role)
     session.commit()
-    session.refresh(db_editor)
-    return db_editor
+
+    return UserResponseModel(
+        email=db_user.email, id=db_user.id, name=db_user.name, role=db_user.role
+    )
+
+
+def login_user(user_detail: OAuth2PasswordRequestForm, session: Session):
+    user: User = session.exec(
+        select(User).filter(User.email == user_detail.username)
+    ).first()
+    user.id = str(user.id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"The {user_detail.username} does not exist",
+        )
+
+    if not verify_password(user_detail.password, user.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"The passwords do not match",
+        )
+
+    access_token = auth.create_access_token(data={"user_id": user.id})
+
+    return Token(access_token=access_token, token_type="bearer")

@@ -15,3 +15,7 @@ DATABASE_URI = (
     + "/"
     + os.environ.get("POSTGRES_DB")
 )
+
+JWT_SECRET = os.environ.get("JWT_SECRET")
+JWT_ALGORITHM = os.environ.get("JWT_ALGORITHM")
+JWT_ACCESS_TOKEN_EXPIRY_MINUTES = int(os.environ.get("JWT_ACCESS_TOKEN_EXPIRY_MINUTES"))

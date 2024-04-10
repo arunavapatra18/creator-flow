@@ -1,19 +1,20 @@
 from uuid import UUID, uuid4
-from sqlmodel import Field, SQLModel
+from pydantic import EmailStr
+from sqlmodel import AutoString, Field, Relationship, SQLModel
 
 
 class UserBase(SQLModel):
-    email: str = Field(index=True, unique=True)
+    email: EmailStr = Field(index=True, unique=True, sa_type=AutoString)
     name: str
+    role: str
 
 
 class UserCreate(UserBase):
     password: str
-    role: str
 
 
 class UserLogin(SQLModel):
-    email: str
+    email: EmailStr
     password: str
 
 
@@ -21,20 +22,26 @@ class UserResponseModel(UserBase):
     id: UUID
 
 
-class Creator(UserBase, table=True):
+class User(UserBase, table=True):
     id: UUID | None = Field(default_factory=uuid4, primary_key=True)
     password: str
+
+
+class Creator(SQLModel, table=True):
+    id: UUID | None = Field(default_factory=uuid4, primary_key=True)
+    user_id: UUID = Field(unique=True, foreign_key="user.id")
     youtube_api_key: str | None = Field(default=None)
 
 
-class CreatorCreate(UserBase):
-    password: str
-
-
-class Editor(UserBase, table=True):
+class Editor(SQLModel, table=True):
     id: UUID | None = Field(default_factory=uuid4, primary_key=True)
-    password: str
+    user_id: UUID = Field(unique=True, foreign_key="user.id")
 
 
-class EditorCreate(UserBase):
-    password: str
+class Token(SQLModel):
+    access_token: str
+    token_type: str
+
+
+class DataToken(SQLModel):
+    id: UUID | None = None
