@@ -33,15 +33,5 @@ class Creator(SQLModel, table=True):
     youtube_api_key: str | None = Field(default=None)
 
 
-class Editor(SQLModel, table=True):
-    id: UUID | None = Field(default_factory=uuid4, primary_key=True)
-    user_id: UUID = Field(unique=True, foreign_key="user.id")
-
-
-class Token(SQLModel):
-    access_token: str
-    token_type: str
-
-
 class DataToken(SQLModel):
     id: UUID | None = None

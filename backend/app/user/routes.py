@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 
@@ -11,7 +11,6 @@ from user.controller import (
 from user.models import (
     UserCreate,
     UserResponseModel,
-    Token,
 )
 
 user_router = APIRouter()
@@ -24,14 +23,14 @@ def register(user: UserCreate, session: Session = Depends(get_session)):
     return db_user_response
 
 
-@user_router.post("/login", response_model=Token)
+@user_router.post("/login")
 def login(
     login_data: OAuth2PasswordRequestForm = Depends(),
     session: Session = Depends(get_session),
 ):
-    token = login_user(login_data, session)
+    response = login_user(login_data, session)
 
-    return token
+    return response
 
 
 @user_router.get("/me", response_model=UserResponseModel)
