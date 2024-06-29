@@ -7,7 +7,7 @@
   <div class="container">
     <Header />
     <br><br>
-    <Forms />
+    <RouterView />
     <br><br>
   </div>
 </template>

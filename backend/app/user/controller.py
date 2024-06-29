@@ -1,9 +1,9 @@
-from fastapi import HTTPException, Response, status
+from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 
 import user.auth as auth
-from user.models import Creator, User, UserCreate, UserResponseModel
+from user.models import Creator, Token, User, UserCreate, UserResponseModel
 from user.util import generate_password_hash, verify_password
 
 
@@ -62,29 +62,29 @@ def login_user(user_detail: OAuth2PasswordRequestForm, session: Session):
         Response: JWT
     """
 
-    user: User = session.exec(
-        select(User).filter(User.email == user_detail.username)
-    ).first()
+    user = session.exec(select(User).filter(User.email == user_detail.username)).first()
 
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"The {user_detail.username} does not exist",
         )
 
-    user.id = str(user.id)
+    user_id = str(user.id)
 
     if not verify_password(user_detail.password, user.password):
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"The passwords do not match",
         )
 
-    access_token = auth.create_access_token(data={"user_id": user.id})
+    user.disabled = False
 
-    response = Response(status_code=status.HTTP_200_OK)
-    response.set_cookie(
-        "access_token", access_token, httponly=True, secure=True, samesite="none"
-    )
+    session.add(user)
+    session.commit()
+
+    access_token = auth.create_access_token(data={"user_id": user_id})
+
+    response = Token(access_token=access_token)
 
     return response

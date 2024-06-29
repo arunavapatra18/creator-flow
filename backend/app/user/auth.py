@@ -14,7 +14,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.now() + timedelta(minutes=JWT_ACCESS_TOKEN_EXPIRY_MINUTES)
-    to_encode.update({"exp": expire.strftime("%Y-%m-%d %H:%M:%S")})
+    to_encode.update({"exp": int(expire.timestamp())})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, JWT_ALGORITHM)
 
     return encoded_jwt
@@ -26,7 +26,7 @@ def verify_token_access(token: str, credentials_exception):
 
         user_id: str = payload.get("user_id")
 
-        if id is None:
+        if user_id is None:
             raise credentials_exception
 
         token_data = DataToken(id=user_id)
@@ -47,8 +47,11 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    token_data: DataToken = verify_token_access(token, credentials_exception)
+    token_data = verify_token_access(token, credentials_exception)
 
     user = session.exec(select(User).where(User.id == token_data.id)).first()
+
+    if user is None:
+        raise credentials_exception
 
     return user

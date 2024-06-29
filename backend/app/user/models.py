@@ -1,6 +1,6 @@
 from uuid import UUID, uuid4
 from pydantic import EmailStr
-from sqlmodel import AutoString, Field, Relationship, SQLModel
+from sqlmodel import AutoString, Field, SQLModel
 
 
 class UserBase(SQLModel):
@@ -25,6 +25,7 @@ class UserResponseModel(UserBase):
 class User(UserBase, table=True):
     id: UUID | None = Field(default_factory=uuid4, primary_key=True)
     password: str
+    disabled: bool = Field(default=True)
 
 
 class Creator(SQLModel, table=True):
@@ -35,3 +36,7 @@ class Creator(SQLModel, table=True):
 
 class DataToken(SQLModel):
     id: UUID | None = None
+
+
+class Token(SQLModel):
+    access_token: str

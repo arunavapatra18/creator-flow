@@ -1,29 +1,34 @@
 <template>
-    <div class="registration surface-card p-4 shadow-6 border-round-xl m-6 w-10">
-        <h2>Welcome Back</h2>
-        <form v-on:submit.prevent="handleSubmit">
-            <FloatLabel class="w-full">
-                <InputText class="w-full" id="email" type="email" v-model="email_value" required/>
-                <label for="email">Email</label>
-            </FloatLabel>
-            <FloatLabel class="w-full">
-                <Password input-id="password" v-model="password_value" toggleMask :feedback="false"/>
-                <label for="password">Password</label>
-            </FloatLabel>
-            <Button type="submit" class="w-max">Sign In</Button>
-            <RouterLink to="/">
-                <Button label="Register" link />
-            </RouterLink>
-        </form>
+    <div class="form bg-teal-300 border-round-2xl shadow-8">
+        <div class="registration surface-card p-4 shadow-6 border-round-xl m-6 w-10">
+            <h2>Welcome Back</h2>
+            <form v-on:submit.prevent="handleSubmit">
+                <FloatLabel class="w-full">
+                    <InputText class="w-full" id="email" type="email" v-model="email_value" required/>
+                    <label for="email">Email</label>
+                </FloatLabel>
+                <FloatLabel class="w-full">
+                    <Password input-id="password" v-model="password_value" toggleMask :feedback="false"/>
+                    <label for="password">Password</label>
+                </FloatLabel>
+                <Button type="submit" class="w-max">Sign In</Button>
+                <RouterLink to="/">
+                    <Button label="Register" link />
+                </RouterLink>
+            </form>
+        </div>
     </div>
 </template>
 
 <script setup>
 import { ref } from "vue";
 import axios from "../axios";
+import { useRouter } from "vue-router";
 
 const email_value = ref();
 const password_value = ref();
+
+const router = useRouter()
 
 const handleSubmit = () => {
     axios.post('/login', {
@@ -33,9 +38,12 @@ const handleSubmit = () => {
     {
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        },
+        withCredentials: true
     })
-    .then(response => console.log(response.status))
+    .then(
+        router.push('/dashboard')
+    )
     .catch(error => console.log(error.response))
 }
 

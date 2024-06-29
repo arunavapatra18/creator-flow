@@ -20,4 +20,9 @@ JWT_SECRET = os.environ.get("JWT_SECRET")
 JWT_ALGORITHM = os.environ.get("JWT_ALGORITHM")
 JWT_ACCESS_TOKEN_EXPIRY_MINUTES = int(os.environ.get("JWT_ACCESS_TOKEN_EXPIRY_MINUTES"))
 
-CORS_ORIGINS = ["*"]
+CORS_ORIGINS = [
+    "http://localhost:5173",
+    "https://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://127.0.0.1:5173",
+]

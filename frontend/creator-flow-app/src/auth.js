@@ -1,17 +1,25 @@
-function getCookie(cname) {
-    let name = cname + "=";
-    let decodedCookie = decodeURIComponent(document.cookie);
-    let ca = decodedCookie.split(';');
-    for(let i = 0; i < ca.length; i++) {
-      let c = ca[i];
-      while (c.charAt(0) === ' ') {
-        c = c.substring(1);
-      }
-      if (c.indexOf(name) === 0) {
-        return c.substring(name.length, c.length);
-      }
-    }
-    return "";
-  }
+import axios from "axios";
 
-  export default getCookie;
+async function isAuthenticated() {
+    const token = localStorage.getItem('access_token');
+    if (!token){
+        console.log("HELLLLLLO")
+        return false;
+    }
+    
+    try{
+        const response = await axios.get('/auth-check', {
+            headers: {
+                'Authorization': 'Bearer $(token)'
+            }
+        });
+        const data = await response.json()
+        return data.authenticated;
+    } 
+    catch (error) {
+        console.log('Error checking authentication status: ', error)
+        return false;
+    }
+}
+
+export default isAuthenticated;
