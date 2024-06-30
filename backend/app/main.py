@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from config import CORS_ORIGINS
 from db.database import close_db, create_db_and_tables
 from user.routes import user_router
+from video.routes import video_router
 
 app = FastAPI(title="creator-flow")
 
@@ -16,6 +17,7 @@ app.add_middleware(
 )
 
 app.include_router(user_router)
+app.include_router(video_router)
 
 
 @app.on_event("startup")

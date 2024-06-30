@@ -1,9 +1,16 @@
-from fastapi import HTTPException, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 
 import user.auth as auth
-from user.models import Creator, Token, User, UserCreate, UserResponseModel
+from user.models import (
+    Creator,
+    CreatorAPIUpdateModel,
+    Token,
+    User,
+    UserCreate,
+    UserResponseModel,
+)
 from user.util import generate_password_hash, verify_password
 
 
@@ -78,13 +85,26 @@ def login_user(user_detail: OAuth2PasswordRequestForm, session: Session):
             detail=f"The passwords do not match",
         )
 
-    user.disabled = False
-
-    session.add(user)
-    session.commit()
-
     access_token = auth.create_access_token(data={"user_id": user_id})
 
     response = Token(access_token=access_token)
 
     return response
+
+
+def set_youtube_api(api_model: CreatorAPIUpdateModel, user: User, session: Session):
+    if user and user.role == "CREATOR":
+        creator = session.exec(
+            select(Creator).filter(Creator.user_id == user.id)
+        ).first()
+
+        if not creator:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"The creator {user.name} doesnot exists.",
+            )
+
+        creator.youtube_api_key = api_model.youtube_api_key
+
+        session.add(creator)
+        session.commit()

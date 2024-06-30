@@ -25,7 +25,6 @@ class UserResponseModel(UserBase):
 class User(UserBase, table=True):
     id: UUID | None = Field(default_factory=uuid4, primary_key=True)
     password: str
-    disabled: bool = Field(default=True)
 
 
 class Creator(SQLModel, table=True):
@@ -34,9 +33,14 @@ class Creator(SQLModel, table=True):
     youtube_api_key: str | None = Field(default=None)
 
 
+class CreatorAPIUpdateModel(SQLModel):
+    youtube_api_key: str
+
+
 class DataToken(SQLModel):
     id: UUID | None = None
 
 
 class Token(SQLModel):
     access_token: str
+    token_type: str = Field(default="bearer")

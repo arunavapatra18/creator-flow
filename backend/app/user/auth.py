@@ -8,6 +8,12 @@ from config import JWT_ACCESS_TOKEN_EXPIRY_MINUTES, JWT_SECRET, JWT_ALGORITHM
 from db.database import get_session
 from user.models import DataToken, User
 
+credentials_exception = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Invalid authentication credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
 
@@ -20,7 +26,7 @@ def create_access_token(data: dict):
     return encoded_jwt
 
 
-def verify_token_access(token: str, credentials_exception):
+def verify_token_access(token: str):
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=JWT_ALGORITHM)
 
@@ -41,13 +47,7 @@ def verify_token_access(token: str, credentials_exception):
 def get_current_user(
     token: str = Depends(oauth2_scheme), session: Session = Depends(get_session)
 ):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid authentication credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-    token_data = verify_token_access(token, credentials_exception)
+    token_data = verify_token_access(token)
 
     user = session.exec(select(User).where(User.id == token_data.id)).first()
 

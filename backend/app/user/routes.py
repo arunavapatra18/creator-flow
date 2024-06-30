@@ -7,8 +7,10 @@ from user.auth import get_current_user
 from user.controller import (
     login_user,
     register_user,
+    set_youtube_api,
 )
 from user.models import (
+    CreatorAPIUpdateModel,
     UserCreate,
     UserResponseModel,
 )
@@ -36,3 +38,12 @@ def login(
 @user_router.get("/me", response_model=UserResponseModel)
 def get_user(user=Depends(get_current_user)):
     return user
+
+
+@user_router.post("/update_apikey")
+def update_creator_youtube_api(
+    api_model: CreatorAPIUpdateModel,
+    user=Depends(get_current_user),
+    session: Session = Depends(get_session),
+):
+    set_youtube_api(api_model, user, session)
