@@ -43,6 +43,14 @@ class UserUpdateModel(SQLModel):
     password: str | None
 
 
+class GetEditorsResponseModel(SQLModel):
+    editors: list[UserResponseModel] | None
+
+
+class GetCreatorsResponseModel(SQLModel):
+    creators: list[UserResponseModel] | None
+
+
 class DataToken(SQLModel):
     id: UUID | None = None
 

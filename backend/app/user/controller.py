@@ -7,6 +7,8 @@ import user.auth as auth
 from user.models import (
     Creator,
     CreatorAPIUpdateModel,
+    GetCreatorsResponseModel,
+    GetEditorsResponseModel,
     Token,
     User,
     UserCreate,
@@ -94,7 +96,7 @@ def login_user(user_detail: OAuth2PasswordRequestForm, session: Session):
     return response
 
 
-def set_youtube_api(api_model: CreatorAPIUpdateModel, user: User, session: Session):
+def set_youtube_apikey(api_model: CreatorAPIUpdateModel, user: User, session: Session):
     """Set youtube api key for creator
 
     Args:
@@ -175,3 +177,81 @@ def update_user_data(user_update_model: UserUpdateModel, user: User, session: Se
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content="Failed to save to database!",
         )
+
+
+def delete_current_user(user: User, session: Session):
+    """Delete current user
+
+    Args:
+        user (User): current user
+        session (Session): database session
+
+    Raises:
+        HTTPException: 404 User not found
+
+    Returns:
+        JSONResponse: Success/failure to delete the current user
+    """
+    db_user = session.exec(select(User).filter(User.id == user.id)).first()
+
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"User not found!"
+        )
+
+    try:
+        session.delete(db_user)
+        session.commit()
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content="User deleted successfully!"
+        )
+    except:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content="Failed to save to database!",
+        )
+
+
+def get_all_editors(session: Session):
+    """Get all the editors
+
+    Args:
+        session (Session): database session
+
+    Raises:
+        HTTPException: 404 No editors are found
+
+    Returns:
+        GetEditorsResponseModel: List of editors
+    """
+    editors = session.exec(select(User).filter(User.role == "EDITOR"))
+
+    if not editors:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Editors not found!"
+        )
+
+    return GetEditorsResponseModel(editors=editors)
+
+
+def get_all_creators(session: Session):
+    """Get all the creators
+
+    Args:
+        session (Session): database session
+
+    Raises:
+        HTTPException: 404 No creators are found
+
+    Returns:
+        GetCreatorsResponseModel: List of creators
+    """
+    creators = session.exec(select(User).filter(User.role == "CREATOR"))
+
+    if not creators:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Creators not found!"
+        )
+
+    return GetCreatorsResponseModel(creators=creators)
