@@ -14,7 +14,7 @@ class UserCreate(UserBase):
 
 
 class UserLogin(SQLModel):
-    email: EmailStr
+    email: EmailStr = Field(index=True, unique=True, sa_type=AutoString)
     password: str
 
 
@@ -35,6 +35,12 @@ class Creator(SQLModel, table=True):
 
 class CreatorAPIUpdateModel(SQLModel):
     youtube_api_key: str
+
+
+class UserUpdateModel(SQLModel):
+    name: str | None
+    email: EmailStr | None
+    password: str | None
 
 
 class DataToken(SQLModel):

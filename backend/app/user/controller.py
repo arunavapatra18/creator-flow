@@ -1,4 +1,5 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 
@@ -10,6 +11,7 @@ from user.models import (
     User,
     UserCreate,
     UserResponseModel,
+    UserUpdateModel,
 )
 from user.util import generate_password_hash, verify_password
 
@@ -93,6 +95,19 @@ def login_user(user_detail: OAuth2PasswordRequestForm, session: Session):
 
 
 def set_youtube_api(api_model: CreatorAPIUpdateModel, user: User, session: Session):
+    """Set youtube api key for creator
+
+    Args:
+        api_model (CreatorAPIUpdateModel): Model for youtube api key
+        user (User): Current user
+        session (Session): Database session
+
+    Raises:
+        HTTPException: 404 Creator doesnot exist
+
+    Returns:
+        JSONResponse: Success/failure to save api key to database
+    """
     if user and user.role == "CREATOR":
         creator = session.exec(
             select(Creator).filter(Creator.user_id == user.id)
@@ -100,11 +115,63 @@ def set_youtube_api(api_model: CreatorAPIUpdateModel, user: User, session: Sessi
 
         if not creator:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"The creator {user.name} doesnot exists.",
             )
 
-        creator.youtube_api_key = api_model.youtube_api_key
+        creator.youtube_api_key = generate_password_hash(api_model.youtube_api_key)
+        try:
+            session.commit()
+            session.refresh(creator)
+            return JSONResponse(
+                status_code=status.HTTP_200_OK, content="Youtube API set successfully!"
+            )
+        except:
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content="Failed to save to database!",
+            )
 
-        session.add(creator)
+
+def update_user_data(user_update_model: UserUpdateModel, user: User, session: Session):
+    """Update user data in database
+
+    Args:
+        user_update_model (UserUpdateModel): Model for user details update
+        user (User): Current user
+        session (Session): Database session
+
+    Raises:
+        HTTPException: 404 User not found
+
+    Returns:
+        JSONResponse: Success/failure to save user updates to database
+    """
+    db_user = session.exec(select(User).filter(User.id == user.id)).first()
+
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"User not found!"
+        )
+
+    if user_update_model.name is not None and user_update_model.name != db_user.name:
+        db_user.name = user_update_model.name
+    if user_update_model.email is not None and user_update_model.email != db_user.email:
+        db_user.email = user_update_model.email
+    if (
+        user_update_model.password is not None
+        and verify_password(user_update_model.password, db_user.password) is False
+    ):
+        db_user.password = generate_password_hash(user_update_model.password)
+
+    try:
         session.commit()
+        session.refresh(db_user)
+        return JSONResponse(
+            status_code=status.HTTP_200_OK, content="User data updated successfully!"
+        )
+    except:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content="Failed to save to database!",
+        )
